@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<users>
+    <user>
+        <id>1</id>
+        <username>customer</username>
+        <email>customer@mail.ru</email>
+        <role>ROLE_USER</role>
+    </user>
+    <user>
+        <id>2</id>
+        <username>djeno</username>
+        <email>djeno00@mail.ru</email>
+        <role>ROLE_DEVELOPER</role>
+    </user>
+</users>

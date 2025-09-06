@@ -1,0 +1,17 @@
+package com.djeno.lab1.persistence.enums;
+
+public enum Privilege {
+    PUBLISH_APP,
+    DELETE_APP,
+    DOWNLOAD_APP,
+    PURCHASE_APP,
+    VIEW_PURCHASED_APP_LIST,
+
+    ADD_PAYMENT_METHOD,
+    SET_PRIMARY_PAYMENT_METHOD,
+    VIEW_PAYMENT_METHOD,
+    DELETE_PAYMENT_METHOD,
+
+    CREATE_REVIEW,
+    DELETE_REVIEW,
+}

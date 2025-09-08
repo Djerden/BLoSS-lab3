@@ -2,14 +2,16 @@
 <users>
     <user>
         <id>1</id>
-        <username>djeno</username>
-        <email>djeno00@mail.ru</email>
-        <role>ROLE_DEVELOPER</role>
-    </user>
-    <user>
-        <id>2</id>
         <username>customer</username>
         <email>customer@mail.ru</email>
         <role>ROLE_USER</role>
+        <createdAt/>
+    </user>
+    <user>
+        <id>2</id>
+        <username>djeno</username>
+        <email>djeno00@mail.ru</email>
+        <role>ROLE_DEVELOPER</role>
+        <createdAt/>
     </user>
 </users>

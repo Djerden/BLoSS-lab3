@@ -56,6 +56,9 @@ dependencies {
     // JCA
     implementation 'jakarta.resource:jakarta.resource-api:2.1.0'
 
+    // PdfGenerator
+    implementation 'com.itextpdf:itextpdf:5.5.13.3'
+
 }
 
 tasks.named('test') {

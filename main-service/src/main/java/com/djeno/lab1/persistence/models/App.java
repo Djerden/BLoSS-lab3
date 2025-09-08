@@ -3,6 +3,7 @@ package com.djeno.lab1.persistence.models;
 import com.djeno.lab1.persistence.enums.AppStatus;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Formula;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -62,6 +63,9 @@ public class App {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AppStatus status;
+
+    @Formula("(SELECT COALESCE(AVG(r.rating), 0) FROM reviews r WHERE r.app_id = id)")
+    private double averageRating;
 
     @PrePersist
     protected void prePersist() {

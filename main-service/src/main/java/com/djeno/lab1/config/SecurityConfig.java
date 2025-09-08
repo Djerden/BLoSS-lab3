@@ -55,7 +55,7 @@ public class SecurityConfig {
 
                         // test/accounts - эндпоинты с доступом для всех
                         .requestMatchers("/test/accounts/**").permitAll()
-
+                        .requestMatchers(HttpMethod.POST, "/yookassa/notifications").permitAll()
                         // apps - эндпоинты с доступом для всех
                         .requestMatchers(HttpMethod.GET, "/apps").permitAll()
                         .requestMatchers(HttpMethod.GET, "/apps/{id}").permitAll()

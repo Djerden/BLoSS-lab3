@@ -37,6 +37,17 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex, HttpStatus.NOT_FOUND, "User Not Found");
     }
 
+
+    @ExceptionHandler(PurchaseAbsenceException.class)
+    public ResponseEntity<ErrorResponse> handlePurchaseAbsenceException(PurchaseAbsenceException ex) {
+        return buildErrorResponse(ex, HttpStatus.NOT_FOUND, "Purchase not found");
+    }
+
+    @ExceptionHandler(PurchaseFreeAppException.class)
+    public ResponseEntity<ErrorResponse> handlePurchaseFreeAppException(PurchaseFreeAppException ex) {
+        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, "App is free");
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException ex) {
         return buildErrorResponse(ex, HttpStatus.UNAUTHORIZED, "Invalid Username or Password");

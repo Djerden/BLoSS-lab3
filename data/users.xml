@@ -6,4 +6,10 @@
         <email>djeno00@mail.ru</email>
         <role>ROLE_DEVELOPER</role>
     </user>
+    <user>
+        <id>2</id>
+        <username>customer</username>
+        <email>customer@mail.ru</email>
+        <role>ROLE_USER</role>
+    </user>
 </users>

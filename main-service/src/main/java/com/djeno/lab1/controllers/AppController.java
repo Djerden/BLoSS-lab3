@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -225,7 +226,7 @@ public class AppController {
     public ResponseEntity<String> purchaseApp(@PathVariable Long id) {
         App app = appService.getAppById(id);
         User user = userService.getCurrentUser();
-        Purchase purchase = purchaseService.purchaseApp(app, user);
-        return ResponseEntity.ok("Приложение было успешно оплачено");
+        String paymentLink = purchaseService.purchaseApp(app, user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(paymentLink);
     }
 }

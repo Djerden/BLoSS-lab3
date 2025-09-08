@@ -1,5 +1,6 @@
 package com.djeno.lab1.persistence.models;
 
+import com.djeno.lab1.persistence.enums.AppStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -57,6 +58,11 @@ public class App {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // Статус загрузки приложения в minio на сервисе app-service асинхронно через брокера
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AppStatus status;
+
     @PrePersist
     protected void prePersist() {
         this.downloads = 0;
@@ -64,6 +70,10 @@ public class App {
 
         if (this.screenshotsIds == null) {
             this.screenshotsIds = new ArrayList<>();
+        }
+
+        if (this.status == null) {
+            this.status = AppStatus.LOADING;
         }
     }
 

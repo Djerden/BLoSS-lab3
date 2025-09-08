@@ -1,28 +1,30 @@
 package com.djeno.lab1.services;
 
 import com.djeno.lab1.exceptions.*;
-import com.djeno.lab1.persistence.DTO.app.AppDetailsDto;
-import com.djeno.lab1.persistence.DTO.app.AppListDto;
-import com.djeno.lab1.persistence.DTO.app.CreateAppRequest;
+import com.djeno.lab1.persistence.DTO.app.*;
+import com.djeno.lab1.persistence.DTO.app.FilePart;
 import com.djeno.lab1.persistence.DTO.review.ReviewDTO;
+import com.djeno.lab1.persistence.enums.AppStatus;
 import com.djeno.lab1.persistence.enums.Role;
 import com.djeno.lab1.persistence.models.*;
 import com.djeno.lab1.persistence.repositories.AppRepository;
 import com.djeno.lab1.persistence.repositories.CategoryRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,13 +37,67 @@ public class AppService {
     private final MinioService minioService;
     private final UserService userService;
     private final PurchaseService purchaseService;
+    private final JmsTemplate jmsTemplate; // настройка ниже
+    private final ObjectMapper objectMapper;
 
     public App getAppById(Long id) {
         return appRepository.findById(id)
                 .orElseThrow(() -> new AppNotFoundException(id));
     }
 
-    public void createApp(
+    @Async("taskExecutor")
+    public void sendAppToUploader(App app,
+                                  CreateAppRequest appData,
+                                  MultipartFile icon,
+                                  MultipartFile apk,
+                                  List<MultipartFile> screenshots) {
+        try {
+            AppUploadMessage msg = new AppUploadMessage();
+            msg.setAppId(app.getId());
+            msg.setOwnerId(app.getOwner().getId());
+            msg.setAppData(appData);
+
+            String correlationId = UUID.randomUUID().toString();
+            msg.setCorrelationId(correlationId);
+
+            if (icon != null && !icon.isEmpty()) {
+                msg.setIconOriginalName(icon.getOriginalFilename());
+                msg.setIconBase64(Base64.getEncoder().encodeToString(icon.getBytes()));
+            }
+
+            msg.setApkOriginalName(apk.getOriginalFilename());
+            msg.setApkBase64(Base64.getEncoder().encodeToString(apk.getBytes()));
+
+            if (screenshots != null && !screenshots.isEmpty()) {
+                List<FilePart> parts = new ArrayList<>();
+                for (MultipartFile s : screenshots) {
+                    if (!s.isEmpty()) {
+                        parts.add(new FilePart(s.getOriginalFilename(),
+                                Base64.getEncoder().encodeToString(s.getBytes())));
+                    }
+                }
+                msg.setScreenshots(parts);
+            }
+
+            // Отправляем в очередь app.upload
+            String payload = objectMapper.writeValueAsString(msg);
+
+            jmsTemplate.convertAndSend("app.upload", payload, m -> {
+                m.setStringProperty("correlationId", correlationId);
+                return m;
+            });
+
+            log.info("Sent upload message for appId={} correlation={}", app.getId(), correlationId);
+
+        } catch (Exception e) {
+            log.error("Failed to build/send upload message: {}", e.getMessage(), e);
+            // В случае ошибки отправки — пометить запись как FAIL
+            app.setStatus(AppStatus.FAIL);
+            appRepository.save(app);
+        }
+    }
+
+    public App createApp(
             CreateAppRequest appData,
             MultipartFile icon,
             MultipartFile file,
@@ -51,36 +107,6 @@ public class AppService {
 
         if (file == null || file.isEmpty()) {
             throw new InvalidFileException("APK файл не загружен");
-        }
-
-        // Загружаем файлы в MinIO
-        String iconId = null;
-        if (icon != null && !icon.isEmpty()) {
-            try {
-                iconId = minioService.uploadFile(icon, MinioService.ICONS_BUCKET);
-            } catch (Exception e) {
-                throw new FileUploadException("Не удалось загрузить иконку: " + e.getMessage());
-            }
-        }
-
-        String fileId;
-        try {
-            fileId = minioService.uploadFile(file, MinioService.APK_BUCKET);
-        } catch (Exception e) {
-            throw new FileUploadException("Не удалось загрузить APK файл: " + e.getMessage());
-        }
-
-        List<String> screenshotsIds = new ArrayList<>();
-        if (screenshots != null) {
-            for (MultipartFile screenshot : screenshots) {
-                if (!screenshot.isEmpty()) {
-                    try {
-                        screenshotsIds.add(minioService.uploadFile(screenshot, MinioService.SCREENSHOTS_BUCKET));
-                    } catch (Exception e) {
-                        throw new FileUploadException("Не удалось загрузить скриншоты: " + e.getMessage());
-                    }
-                }
-            }
         }
 
         List<Category> categories = new ArrayList<>();
@@ -93,13 +119,48 @@ public class AppService {
         app.setDescription(appData.getDescription());
         app.setPrice(appData.getPrice());
         app.setOwner(owner);
-        app.setIconId(iconId);
-        app.setFileId(fileId);
-        app.setScreenshotsIds(screenshotsIds);
         app.setCategories(categories);
 
-        appRepository.save(app);
+        App savedApp = appRepository.save(app);
+
+        sendAppToUploader(app, appData, icon, file, screenshots);
+
+        return savedApp;
     }
+
+    // Listener для результатов
+    @JmsListener(destination = "app.upload.result")
+    public void handleUploadResult(String payload, @Header("correlationId") String correlationId) {
+        try {
+            UploadResultMessage res = objectMapper.readValue(payload, UploadResultMessage.class);
+            Long appId = res.getAppId();
+            Optional<App> opt = appRepository.findById(appId);
+            if (opt.isEmpty()) {
+                log.warn("Received upload result for unknown appId={}", appId);
+                return;
+            }
+            App app = opt.get();
+            if (res.isSuccess()) {
+                app.setStatus(AppStatus.SUCCESS);
+                app.setIconId(res.getIconId());
+                app.setFileId(res.getFileId());
+                app.setScreenshotsIds(res.getScreenshotsIds());
+            } else {
+                app.setStatus(AppStatus.FAIL);
+                log.warn("Upload failed for appId={}, error={}", appId, res.getErrorMessage());
+            }
+            appRepository.save(app);
+        } catch (Exception e) {
+            log.error("Failed to process upload result: {}", e.getMessage(), e);
+        }
+    }
+
+    // метод для endpoint /apps/{id}/status
+    public AppStatus getStatus(Long id) {
+        App a = getAppById(id);
+        return a.getStatus();
+    }
+
     public Page<AppListDto> getPurchasedApps(User user, Pageable pageable) {
         // Получаем страницу покупок пользователя
         Page<Purchase> purchasesPage = purchaseService.getPurchasesByUser(user, pageable);

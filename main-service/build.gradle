@@ -6,6 +6,7 @@ plugins {
 
 group = 'com.djeno'
 version = '0.0.1-SNAPSHOT'
+description = 'main-service'
 
 java {
     toolchain {
@@ -42,12 +43,16 @@ dependencies {
     implementation 'com.atomikos:transactions-jta:6.0.0:jakarta'
     implementation 'com.atomikos:transactions-jdbc:6.0.0:jakarta'
     implementation 'com.atomikos:transactions-jms:6.0.0:jakarta'
-    implementation 'com.atomikos:transactions-jms:6.0.0:jakarta'
 
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
     implementation 'io.minio:minio:8.5.17'
+    // RabbitMQ
+    implementation 'org.springframework:spring-jms'
+    implementation 'com.rabbitmq.jms:rabbitmq-jms:3.0.0'
+//    implementation 'jakarta.jms:jakarta.jms-api:3.1.0'
+//    implementation 'org.apache.qpid:qpid-jms-client:2.3.0'
 }
 
 tasks.named('test') {

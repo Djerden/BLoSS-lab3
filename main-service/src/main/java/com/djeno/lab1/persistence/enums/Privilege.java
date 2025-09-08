@@ -2,6 +2,7 @@ package com.djeno.lab1.persistence.enums;
 
 public enum Privilege {
     PUBLISH_APP,
+    CHECK_LOADING_STATUS_APP,
     DELETE_APP,
     DOWNLOAD_APP,
     PURCHASE_APP,

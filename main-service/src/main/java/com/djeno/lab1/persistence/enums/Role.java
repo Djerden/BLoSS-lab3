@@ -23,13 +23,16 @@ public enum Role {
     ROLE_DEVELOPER(Set.of(
             Privilege.PUBLISH_APP,
             Privilege.DELETE_APP,
-            Privilege.DOWNLOAD_APP
+            Privilege.DOWNLOAD_APP,
+            Privilege.CHECK_LOADING_STATUS_APP
     )),
     @XmlEnumValue("ROLE_ADMIN")
     ROLE_ADMIN(Set.of(
             Privilege.DELETE_APP,
             Privilege.DOWNLOAD_APP,
-            Privilege.DELETE_REVIEW));
+            Privilege.DELETE_REVIEW,
+            Privilege.CHECK_LOADING_STATUS_APP
+    ));
 
     private final Set<Privilege> privileges;
 

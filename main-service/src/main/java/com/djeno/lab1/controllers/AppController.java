@@ -4,6 +4,7 @@ import com.djeno.lab1.persistence.DTO.app.AppDetailsDto;
 import com.djeno.lab1.persistence.DTO.app.AppListDto;
 import com.djeno.lab1.persistence.DTO.app.CreateAppRequest;
 import com.djeno.lab1.persistence.DTO.error.ErrorResponse;
+import com.djeno.lab1.persistence.enums.AppStatus;
 import com.djeno.lab1.persistence.models.App;
 import com.djeno.lab1.persistence.models.Purchase;
 import com.djeno.lab1.persistence.models.User;
@@ -61,15 +62,9 @@ public class AppController {
     public ResponseEntity<Page<AppListDto>> getPurchasedApps(
             @PageableDefault(size = 10) Pageable pageable
     ) {
-        // Получаем текущего пользователя
         User currentUser = userService.getCurrentUser();
-
-        // Получаем страницу покупок пользователя
         Page<Purchase> purchasesPage = purchaseService.getPurchasesByUser(currentUser, pageable);
-
-        // Преобразуем каждую покупку в DTO приложения
         Page<AppListDto> appsPage = appService.getPurchasedApps(currentUser, pageable);
-
         return ResponseEntity.ok(appsPage);
     }
 
@@ -118,8 +113,15 @@ public class AppController {
             return ResponseEntity.badRequest().body("APK-файл обязателен");
         }
 
-        appService.createApp(appData, icon, file, screenshots);
-        return ResponseEntity.ok("Приложение загружено");
+        App savedApp = appService.createApp(appData, icon, file, screenshots);
+        return ResponseEntity.ok("Приложение отправлено на сохранение, id приложения для отслеживания: " + savedApp.getId());
+    }
+
+    @PreAuthorize("hasAuthority('CHECK_LOADING_STATUS_APP')")
+    @GetMapping("/{id}/status")
+    public ResponseEntity<String> getUploadStatus(@PathVariable Long id) {
+        AppStatus status = appService.getStatus(id);
+        return ResponseEntity.ok(status.name().toLowerCase());
     }
 
     @Operation(

@@ -64,7 +64,6 @@ public class AppController {
             @PageableDefault(size = 10) Pageable pageable
     ) {
         User currentUser = userService.getCurrentUser();
-        Page<Purchase> purchasesPage = purchaseService.getPurchasesByUser(currentUser, pageable);
         Page<AppListDto> appsPage = appService.getPurchasedApps(currentUser, pageable);
         return ResponseEntity.ok(appsPage);
     }

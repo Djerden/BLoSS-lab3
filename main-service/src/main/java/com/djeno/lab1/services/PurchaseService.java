@@ -35,6 +35,10 @@ public class PurchaseService {
         return purchaseRepository.findByUser(user, pageable);
     }
 
+    public Page<Purchase> getPaidPurchasesByUser(User user, Pageable pageable) {
+        return purchaseRepository.findByUserAndStatus(user, PurchaseStatus.PAID, pageable);
+    }
+
     public boolean hasUserPurchasedApp(User user, App app) {
         return purchaseRepository.existsByUserAndApp(user, app);
     }

@@ -1,5 +1,6 @@
 package com.djeno.lab1.persistence.repositories;
 
+import com.djeno.lab1.persistence.enums.PurchaseStatus;
 import com.djeno.lab1.persistence.models.App;
 import com.djeno.lab1.persistence.models.Purchase;
 import com.djeno.lab1.persistence.models.User;
@@ -14,4 +15,7 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
     boolean existsByUserAndApp(User user, App app);
 
     Page<Purchase> findByUser(User user, Pageable pageable);
+
+    Page<Purchase> findByUserAndStatus(User user, PurchaseStatus status, Pageable pageable);
+
 }

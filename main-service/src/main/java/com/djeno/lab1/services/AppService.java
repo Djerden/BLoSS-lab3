@@ -162,13 +162,8 @@ public class AppService {
     }
 
     public Page<AppListDto> getPurchasedApps(User user, Pageable pageable) {
-        // Получаем страницу покупок пользователя
-        Page<Purchase> purchasesPage = purchaseService.getPurchasesByUser(user, pageable);
-
-        // Преобразуем каждую покупку в DTO приложения
-        Page<AppListDto> appsPage = purchasesPage.map(purchase -> convertToAppListDto(purchase.getApp()));
-
-        return appsPage;
+        Page<Purchase> purchasesPage = purchaseService.getPaidPurchasesByUser(user, pageable);
+        return purchasesPage.map(purchase -> convertToAppListDto(purchase.getApp()));
     }
 
     public Page<AppListDto> getApps(Long categoryId, Pageable pageable) {
